@@ -58,6 +58,55 @@ public class PlayerController : MonoBehaviour
             }
         }
         //press 1, 2 .. to switch item
+        //휠을 굴려서 아이템 무기 변경하는 형태이지만. 이때의 경우, 0번과 최대번호를 연결 한 느낌으로, 0에서 1 만큼 줄이면 다시 최대에서 부터 줄일 수 있는 형태로
+        //Cycle 형태로 
+        if (Input.GetAxisRaw("Mouse ScrollWheel") > 0f)
+        {
+            if (itemIndex >= items.Length - 1)
+            {
+                EquipItem(0);
+            }
+            else
+            {
+                
+                EquipItem(itemIndex + 1);
+            }
+        }
+        else if (Input.GetAxisRaw("Mouse ScrollWheel") < 0f)
+        {
+            if (itemIndex <=0)
+            {
+                EquipItem(items.Length - 1);
+            }
+            else
+            {
+                EquipItem(itemIndex-1);
+            }
+        } 
+        
+        /*//0번 보다 아래로 내린다 해도 무기가 바뀌지 않게끔. 반대로도 맞음.
+         if (Input.GetAxisRaw("Mouse ScrollWheel") > 0f)
+        {
+            if (itemIndex >= items.Length - 1)
+            {
+                EquipItem(items.Length - 1);
+            }
+            else
+            {
+                EquipItem(itemIndex + 1);
+            }
+        }
+        else if (Input.GetAxisRaw("Mouse ScrollWheel") < 0f)
+        {
+            if (itemIndex <=0)
+            {
+                EquipItem(0);
+            }
+            else
+            {
+                EquipItem(itemIndex-1);
+            }
+        }*/
     }
 
     void Look()
