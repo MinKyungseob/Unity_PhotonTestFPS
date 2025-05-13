@@ -1,12 +1,11 @@
-using System;
+using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.Serialization.Json;
-using Photon.Pun;
-using Unity.VisualScripting;
+using Photon.Realtime;
 using UnityEngine;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviourPunCallbacks, IDamageable
 {
     [SerializeField] GameObject cameraHolder;
     [SerializeField] float mouseSensitivity, sprintSpeed, walkSpeed, jumpForce, smoothTime;
@@ -22,10 +21,16 @@ public class PlayerController : MonoBehaviour
     Rigidbody rb;
     PhotonView PV;
 
+    private const float maxHealth = 100f;
+    private float currentHealth = maxHealth;
+
+    PlayerManager playerManager;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
         PV = GetComponent<PhotonView>();
+        playerManager = PhotonView.Find((int)PV.InstantiationData[0]).GetComponent<PlayerManager>();
     }
 
     void Start()
@@ -82,8 +87,13 @@ public class PlayerController : MonoBehaviour
             {
                 EquipItem(itemIndex-1);
             }
+
         } 
         
+        if (Input.GetMouseButtonDown(0))
+        {
+            items[itemIndex].Use();
+        }
         /*//0번 보다 아래로 내린다 해도 무기가 바뀌지 않게끔. 반대로도 맞음.
          if (Input.GetAxisRaw("Mouse ScrollWheel") > 0f)
         {
@@ -150,6 +160,23 @@ public class PlayerController : MonoBehaviour
         }
 
         previousItemIndex = itemIndex;
+
+        //sending properties after network
+        if (PV.IsMine)
+        {
+            Hashtable hash = new Hashtable();
+            hash.Add("ItemIndex", itemIndex);
+            PhotonNetwork.LocalPlayer.SetCustomProperties(hash);
+        }
+    }
+
+    public override void OnPlayerPropertiesUpdate(Player targetPlayer, Hashtable changedProps)
+    {
+        //Receiving Property data
+        if (!PV.IsMine && targetPlayer == PV.Owner)
+        {
+            EquipItem((int)changedProps["itemIndex"]);
+        }
     }
 
     public void SetGroundedState(bool _isGrounded)
@@ -162,5 +189,31 @@ public class PlayerController : MonoBehaviour
         if(!PV.IsMine) 
             return;
         rb.MovePosition(rb.position + transform.TransformDirection(moveAmount) * Time.fixedDeltaTime);
+    }
+
+    public void TakeDamage(float damage)
+    {
+        PV.RPC("RPC_TakeDamage", RpcTarget.All, damage);
+    }
+
+    [PunRPC]
+    void RPC_TakeDamage(float damage)
+    {
+        if(!PV.IsMine)
+            return;
+
+        currentHealth -= damage;
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+
+        Debug.Log("Took damage : " + damage);
+    }
+
+    void Die()
+    {
+        playerManager.Die();
     }
 }
