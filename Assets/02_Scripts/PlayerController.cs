@@ -94,6 +94,12 @@ public class PlayerController : MonoBehaviourPunCallbacks, IDamageable
         {
             items[itemIndex].Use();
         }
+
+        if (transform.position.y < -10.0f)
+        {
+            Die();
+        }
+        
         /*//0번 보다 아래로 내린다 해도 무기가 바뀌지 않게끔. 반대로도 맞음.
          if (Input.GetAxisRaw("Mouse ScrollWheel") > 0f)
         {
